@@ -10,6 +10,18 @@ namespace SqlParser
     class Dom
     {
 
+
+        public static void Test()
+        {
+            string sql = "SELECT 123 as abc, 'Hello foo /*bar*/ my --world ' AS xyz --Hello";
+            string stripped = Dom.StripCommentsFromSQL(sql);
+            stripped = Dom.RemoveComments(sql, false, false);
+            // stripped = Dom.RemoveSingleLineComment(sql);
+            stripped = Dom.RemoveCstyleComments(sql);
+            System.Console.WriteLine(stripped);
+        }
+
+
         // https://stackoverflow.com/questions/9842991/regex-to-remove-single-line-sql-comments
         public static string RemoveCstyleComments(string strInput)
         {

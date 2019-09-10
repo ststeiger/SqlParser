@@ -33,36 +33,30 @@ namespace SqlParser
             // https://github.com/antlr/grammars-v4/tree/master/tsql
             // https://github.com/antlr/grammars-v4/tree/master/plsql/CSharp
 
-            string fileName = @"D:\username\Desktop\sysflang.sql";
+            // string text = System.IO.File.ReadAllText(@"D:\username\Desktop\sysflang.sql");
+            string text = @"
+SELECT 123 AS /*some crap*/aaa, 'Hello foo /*bar*/ my --world ' AS xyz -- Hello
+--ciao
+-- bye bye
+";
 
-            LexerTest(fileName);
+            LexerTest(text);
             // WalkerTest(fileName);
             // VisitorTest(fileName);
+
+            // Dom.Test();
 
             System.Console.WriteLine(" --- Press any key to continue --- ");
             System.Console.ReadKey();
         } // End Sub Main 
 
 
-        static void DomTests()
-        {
-            string sql = "SELECT 123 as abc, 'Hello foo /*bar*/ my --world ' AS xyz --Hello";
-            string stripped = Dom.StripCommentsFromSQL(sql);
-            stripped = Dom.RemoveComments(sql, false, false);
-            // stripped = Dom.RemoveSingleLineComment(sql);
-            stripped = Dom.RemoveCstyleComments(sql);
-            System.Console.WriteLine(stripped);
-        }
-
 
         // https://github.com/dotjpg3141/Strings
-        static void LexerTest(string fileName)
+        static void LexerTest(string text)
         {
             try
             {
-                // string text = System.IO.File.ReadAllText(fileName);
-                string text = "SELECT 123 AS /*some crap*/aaa, 'Hello foo /*bar*/ my --world ' AS xyz --Hello";
-
                 System.IO.StringReader reader = new System.IO.StringReader(text);
 
                 // Antlr4.Runtime.AntlrInputStream input = new Antlr4.Runtime.AntlrInputStream(reader);
@@ -88,7 +82,7 @@ namespace SqlParser
                         continue;
 
                     sql += token.Text + " ";
-                    System.Console.WriteLine(token.Text);
+                    // System.Console.WriteLine(token.Text);
                     // System.Console.WriteLine(token.Type);
                     // System.Console.WriteLine(tokenTypeName);
 
@@ -104,12 +98,11 @@ namespace SqlParser
         } // End Sub ParserTest 
 
 
-        static void WalkerTest(string fileName)
+        static void WalkerTest(string text)
         {
 
             try
             {
-                string text = System.IO.File.ReadAllText(fileName);
                 System.IO.StringReader reader = new System.IO.StringReader(text);
                 Antlr4.Runtime.AntlrInputStream input = new Antlr4.Runtime.AntlrInputStream(reader);
                 TSqlLexer lexer = new TSqlLexer(input);
@@ -140,12 +133,11 @@ namespace SqlParser
         } // End Sub ParserTest 
         
 
-        static void VisitorTest(string fileName)
+        static void VisitorTest(string text)
         {
 
             try
             {
-                string text = System.IO.File.ReadAllText(fileName);
                 System.IO.StringReader reader = new System.IO.StringReader(text);
                 Antlr4.Runtime.AntlrInputStream input = new Antlr4.Runtime.AntlrInputStream(reader);
                 TSqlLexer lexer = new TSqlLexer(input);
