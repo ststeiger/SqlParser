@@ -40,12 +40,14 @@ SELECT 123 AS /*some crap*/aaa, 'Hello foo /*bar*/ my --world ' AS xyz -- Hello
 -- bye bye
 ";
 
-            LexerTest(text);
-            // WalkerTest(fileName);
-            // VisitorTest(fileName);
 
             // Dom.Test();
 
+
+            LexerTest(text);
+            // WalkerTest(fileName);
+            // VisitorTest(fileName);
+            
             System.Console.WriteLine(" --- Press any key to continue --- ");
             System.Console.ReadKey();
         } // End Sub Main 
