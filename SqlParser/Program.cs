@@ -37,9 +37,17 @@ SELECT 123 AS /*some crap*/aaa, 'test' as test
 --ciao
 -- bye bye
 ";
-            
+
+            text = @"SELECT 123 as/* */abc
+";
+            text = "SELECT 123[abc]";
+            // text = "SELECT 123/* test */[abc]";
+            text = @"SELECT 123[abc]
+/*test*/";
+
+
             // Dom.Test();
-            
+
             LexerTest(text);
             // WalkerTest(fileName);
             // VisitorTest(fileName);
@@ -79,9 +87,12 @@ SELECT 123 AS /*some crap*/aaa, 'test' as test
                     if (token.Type == TSqlLexer.LINE_COMMENT || token.Type == TSqlLexer.COMMENT ||
                         token.Type == TSqlLexer.Eof)
                     {
-                        Interval ival2 = new Interval(lastIndex, token.StartIndex - 1);
-                        string extracted2 = token.InputStream.GetText(ival2);
-                        sb.Append(extracted2);
+                        Interval blankInterval = new Interval(lastIndex, token.StartIndex - 1);
+                        string extractedBlank = token.InputStream.GetText(blankInterval);
+                        if(string.IsNullOrEmpty(extractedBlank))
+                            sb.Append(" ");
+                        else
+                            sb.Append(extractedBlank);
 
                         lastIndex = token.StopIndex + 1;
                         continue;
