@@ -35,7 +35,8 @@ namespace SqlParser
 
             // string text = System.IO.File.ReadAllText(@"D:\username\Desktop\sysflang.sql");
             string text = @"
-SELECT 123 AS /*some crap*/aaa, 'Hello foo /*bar*/ my --world ' AS xyz -- Hello
+SELECT 123 AS /*some crap*/aaa, 'test' as test 
+    , 'Hello foo /*bar*/ my --world ' AS xyz -- Hello
 --ciao
 -- bye bye
 ";
