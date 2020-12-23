@@ -26,15 +26,264 @@ namespace SqlParser
         // https://github.com/azraelrabbit/SqlSchemer
         static void Main(string[] args)
         {
-            SubstituteVariablesTest();
-            CommentRemoverLexerTest();
+            SplitMultiTableInsertScript();
+            // SubstituteVariablesTest();
+            // CommentRemoverLexerTest();
 
             System.Console.WriteLine(" --- Press any key to continue --- ");
             System.Console.ReadKey();
         }
 
 
-            static string SubstituteVariablesTest()
+
+        public static System.Text.Encoding GetSystemEncoding()
+        {
+            // The OEM code page for use by legacy console applications
+            // int oem = System.Globalization.CultureInfo.CurrentCulture.TextInfo.OEMCodePage;
+
+            // The ANSI code page for use by legacy GUI applications
+            // int ansi = System.Globalization.CultureInfo.InstalledUICulture.TextInfo.ANSICodePage; // Machine 
+            int ansi = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ANSICodePage; // User 
+
+            try
+            {
+                System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+                System.Text.Encoding enc = System.Text.Encoding.GetEncoding(ansi);
+                return enc;
+            }
+            catch (System.Exception)
+            { }
+
+
+            try
+            {
+
+                foreach (System.Text.EncodingInfo ei in System.Text.Encoding.GetEncodings())
+                {
+                    System.Text.Encoding e = ei.GetEncoding();
+
+                    // 20'127: US-ASCII 
+                    if (e.WindowsCodePage == ansi && e.CodePage != 20127)
+                    {
+                        return e;
+                    }
+
+                }
+            }
+            catch (System.Exception)
+            { }
+
+            // return System.Text.Encoding.GetEncoding("iso-8859-1");
+            return System.Text.Encoding.UTF8;
+        }
+
+
+        static void SplitMultiTableInsertScript()
+        {
+            string fileName = @"D:\SQL\TESS\Anlage_Refdaten.txt";
+            fileName = @"D:\SQL\TESS\Adressdaten.txt";
+            fileName = @"D:\SQL\TESS\Anlagedaten.txt";
+            fileName = @"D:\SQL\TESS\Anlagerechte.txt";
+            fileName = @"D:\SQL\TESS\Kontaktdaten.txt";
+            fileName = @"D:\SQL\TESS\Navigation.txt";
+
+            
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+
+            // https://github.com/antlr/grammars-v4/tree/master/tsql
+            // https://github.com/antlr/grammars-v4/tree/master/plsql/CSharp
+
+
+            System.Text.Encoding enc = GetSystemEncoding();
+            
+
+            string text = System.IO.File.ReadAllText(fileName, enc);
+            System.IO.StringReader reader = new System.IO.StringReader(text);
+
+            // Antlr4.Runtime.AntlrInputStream input = new Antlr4.Runtime.AntlrInputStream(reader);
+
+            Antlr4.Runtime.ICharStream input1 = new Antlr4.Runtime.AntlrInputStream(reader);
+            Antlr4.Runtime.CaseChangingCharStream input = new Antlr4.Runtime.CaseChangingCharStream(input1, true);
+
+
+            TSqlLexer lexer = new TSqlLexer(input);
+
+            Antlr4.Runtime.CommonTokenStream tokenStream = new Antlr4.Runtime.CommonTokenStream(lexer);
+
+            tokenStream.Fill();
+
+            
+            int lastIndex = 0;
+
+
+            System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<string>> dict = 
+                new System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<string>>(System.StringComparer.InvariantCultureIgnoreCase);
+
+
+            System.Collections.Generic.List<string> lsTableName = new System.Collections.Generic.List<string>();
+
+
+            bool ignoreThis = true;
+            bool partOfTableName = false;
+
+            int lastTokenType = -1;
+            int secondLastTokenType = -1;
+
+
+            foreach (Antlr4.Runtime.IToken token in tokenStream.GetTokens())
+            {
+                // System.Console.WriteLine(token.Text);
+                string tokenTypeName = lexer.Vocabulary.GetSymbolicName(token.Type);
+                Antlr4.Runtime.Misc.Interval ival = new Antlr4.Runtime.Misc.Interval(lastIndex, token.StopIndex);
+                string extracted = token.InputStream.GetText(ival);
+                extracted = extracted.Trim(new char[] { '\t', '\v', '\r', '\n' });
+
+                if (token.Type == TSqlLexer.INSERT)
+                {
+                    if (sb.Length > 0)
+                    {
+                        string tn = string.Join(".", lsTableName.ToArray()).Replace("[","").Replace("]","");
+                        lsTableName.Clear();
+                        System.Console.WriteLine(tn);
+
+                        if (!dict.ContainsKey(tn))
+                            dict[tn] = new System.Collections.Generic.List<string>();
+
+
+                        sb.Append(";");
+                        dict[tn].Add(sb.ToString());
+                    }
+                        
+
+                    sb.Clear();
+                    ignoreThis = false;
+                    partOfTableName = true;
+                }
+                else if (token.Type == TSqlLexer.GO)
+                {
+                    ignoreThis = true;
+                    partOfTableName = false;
+                }
+                else if (token.Type == TSqlLexer.USE)
+                {
+                    ignoreThis = true;
+                    partOfTableName = false;
+                }
+                else if (token.Type == TSqlLexer.SEMI)
+                {
+                    ignoreThis = true;
+                    partOfTableName = false;
+                }
+                else if (token.Type == TSqlLexer.Eof)
+                { }
+                else if (token.Type == TSqlLexer.LR_BRACKET)
+                {
+                    partOfTableName = false;
+                }
+                else if (token.Type == TSqlLexer.RR_BRACKET)
+                { }
+                else if (token.Type == TSqlLexer.COMMA)
+                { }
+                else if (token.Type == TSqlLexer.INTO)
+                { }
+                else if (token.Type == TSqlLexer.VALUES || token.Type == TSqlLexer.SELECT)
+                { 
+                
+                }
+                else if (token.Type == TSqlLexer.ID || token.Type == TSqlLexer.SQUARE_BRACKET_ID)
+                {
+                    if(partOfTableName)
+                        lsTableName.Add(extracted);
+                }
+                else if (token.Type == TSqlLexer.DOT)
+                { }
+                else if (token.Type == TSqlLexer.STRING)
+                { }
+                else if (token.Type == TSqlLexer.DECIMAL)
+                { }
+                else if (token.Type == TSqlLexer.FLOAT)
+                { }
+                else if (token.Type == TSqlLexer.NULL)
+                { }
+                else if (token.Type == TSqlLexer.CAST)
+                { }
+                else if (token.Type == TSqlLexer.AS)
+                { 
+                    // CAST(xxx AS datetime) 
+                }
+                else if (token.Type == TSqlLexer.MINUS)
+                {
+                    // Negative Number
+                }
+                else
+                {
+                    System.Console.WriteLine(tokenTypeName);
+                }
+
+
+
+
+                // System.Console.WriteLine((extracted));
+                if (!ignoreThis && token.Type != TSqlLexer.SEMI)
+                {
+                    sb.Append(extracted);
+                }
+                    
+                
+
+
+
+                // System.Console.WriteLine(token.Text);
+                // System.Console.WriteLine(token.Type);
+                // System.Console.WriteLine(tokenTypeName);
+
+                lastIndex = token.StopIndex + 1;
+
+
+                secondLastTokenType = lastTokenType;
+                lastTokenType = token.Type;
+            } // Next token 
+
+            if (sb.Length > 0)
+            {
+                string tn = string.Join(".", lsTableName.ToArray()).Replace("[", "").Replace("]", "");
+                lsTableName.Clear();
+                System.Console.WriteLine(tn);
+
+                if (!dict.ContainsKey(tn))
+                    dict[tn] = new System.Collections.Generic.List<string>();
+
+                sb.Append(";");
+                dict[tn].Add(sb.ToString());
+            }
+                
+
+            sb.Clear();
+            sb = null;
+
+
+            string baseDir = System.IO.Path.GetFileNameWithoutExtension(fileName);
+            baseDir = System.IO.Path.Combine(@"D:\SQL\TESS", baseDir);
+            if (!System.IO.Directory.Exists(baseDir))
+                System.IO.Directory.CreateDirectory(baseDir);
+
+            foreach (System.Collections.Generic.KeyValuePair<string, System.Collections.Generic.List<string>> kvp in dict)
+            {
+                string dir = kvp.Key;
+                string content = string.Join("\r\n\r\n", kvp.Value.ToArray());
+                System.Console.WriteLine(content);
+
+                string fn = System.IO.Path.Combine(baseDir, kvp.Key + ".sql");
+                System.IO.File.WriteAllText(fn, content, System.Text.Encoding.UTF8);
+            } // Next kvp 
+
+
+            System.Console.WriteLine(dict);
+
+        } // End Sub SplitMultiTableInsertScript 
+
+
+        static string SubstituteVariablesTest()
         {
             // https://github.com/antlr/grammars-v4/tree/master/tsql
             // https://github.com/antlr/grammars-v4/tree/master/plsql/CSharp
@@ -150,7 +399,7 @@ AND
             System.Console.WriteLine(sql);
 
             return sql;
-        } // End Sub Main 
+        } // End Sub SubstituteVariablesTest 
 
 
 
@@ -179,7 +428,7 @@ SELECT 123 AS /*some crap*/aaa, 'test' as test
             // WalkerTest(fileName);
             // VisitorTest(fileName);
 
-        }
+        } // End Sub CommentRemoverLexerTest 
 
 
 
