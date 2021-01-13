@@ -86,8 +86,12 @@ namespace SqlParser
             fileName = @"D:\SQL\TESS\Anlagerechte.txt";
             fileName = @"D:\SQL\TESS\Kontaktdaten.txt";
             fileName = @"D:\SQL\TESS\Navigation.txt";
-
+            fileName = @"D:\username\Desktop\Raumdaten\Raumdaten.sql";
+            fileName = @"D:\username\Desktop\Raumdaten\Vertragsdaten.sql";
             
+
+
+
             System.Text.StringBuilder sb = new System.Text.StringBuilder();
 
             // https://github.com/antlr/grammars-v4/tree/master/tsql
@@ -263,7 +267,10 @@ namespace SqlParser
 
 
             string baseDir = System.IO.Path.GetFileNameWithoutExtension(fileName);
-            baseDir = System.IO.Path.Combine(@"D:\SQL\TESS", baseDir);
+
+            string outputDirectory = System.IO.Path.GetDirectoryName(fileName);
+
+            baseDir = System.IO.Path.Combine(outputDirectory, baseDir);
             if (!System.IO.Directory.Exists(baseDir))
                 System.IO.Directory.CreateDirectory(baseDir);
 
