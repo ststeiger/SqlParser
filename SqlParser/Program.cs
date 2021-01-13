@@ -146,7 +146,7 @@ namespace SqlParser
                 {
                     if (sb.Length > 0)
                     {
-                        string tn = string.Join(".", lsTableName.ToArray()).Replace("[","").Replace("]","");
+                        string tn = string.Join(".", lsTableName.ToArray()).Replace("[","").Replace("]","").Trim();
                         lsTableName.Clear();
                         System.Console.WriteLine(tn);
 
@@ -250,7 +250,7 @@ namespace SqlParser
 
             if (sb.Length > 0)
             {
-                string tn = string.Join(".", lsTableName.ToArray()).Replace("[", "").Replace("]", "");
+                string tn = string.Join(".", lsTableName.ToArray()).Replace("[", "").Replace("]", "").Trim();
                 lsTableName.Clear();
                 System.Console.WriteLine(tn);
 
@@ -259,8 +259,8 @@ namespace SqlParser
 
                 sb.Append(";");
                 dict[tn].Add(sb.ToString());
-            }
-                
+            } // End if (sb.Length > 0) 
+
 
             sb.Clear();
             sb = null;
