@@ -4,8 +4,8 @@ using SqlParser.grammars;
 
 namespace SqlParser
 {
-    
-    
+
+
     internal class Program
     {
         // https://www.nuget.org/packages/Microsoft.SqlServer.TransactSql.ScriptDom/15.0.4200.1
@@ -26,7 +26,9 @@ namespace SqlParser
         // https://github.com/azraelrabbit/SqlSchemer
         static void Main(string[] args)
         {
-            SplitMultiTableInsertScript();
+            var ls = GetVariableNames();
+            System.Console.WriteLine(ls);
+            // SplitMultiTableInsertScript();
             // SubstituteVariablesTest();
             // CommentRemoverLexerTest();
 
@@ -78,6 +80,51 @@ namespace SqlParser
         }
 
 
+        public static System.Collections.Generic.List<string> GetVariableNames()
+        {
+            System.Collections.Generic.List<string> ls = new System.Collections.Generic.List<string>();
+
+            string text = @"
+SELECT BE_Name FROM T_Benutzer WHERE Name =@username 
+OR Name LIKE '%' + @foo + '%'
+";
+            System.IO.StringReader reader = new System.IO.StringReader(text);
+
+            // Antlr4.Runtime.AntlrInputStream input = new Antlr4.Runtime.AntlrInputStream(reader);
+
+            Antlr4.Runtime.ICharStream input1 = new Antlr4.Runtime.AntlrInputStream(reader);
+            Antlr4.Runtime.CaseChangingCharStream input = new Antlr4.Runtime.CaseChangingCharStream(input1, true);
+
+
+            TSqlLexer lexer = new TSqlLexer(input);
+
+            Antlr4.Runtime.CommonTokenStream tokenStream = new Antlr4.Runtime.CommonTokenStream(lexer);
+            tokenStream.Fill();
+
+            int lastIndex = 0;
+
+            foreach (Antlr4.Runtime.IToken token in tokenStream.GetTokens())
+            {
+                // System.Console.WriteLine(token.Text);
+                string tokenTypeName = lexer.Vocabulary.GetSymbolicName(token.Type);
+                Antlr4.Runtime.Misc.Interval ival = new Antlr4.Runtime.Misc.Interval(lastIndex, token.StopIndex);
+                string extracted = token.InputStream.GetText(ival);
+                
+                // table_name, cte_name: ID, SQUARE_BRACKET_ID
+                // Local variables: LOCAL_ID
+                if (token.Type == TSqlLexer.LOCAL_ID)
+                {
+                    extracted = extracted.Trim(new char[] { ' ', '\t', '\v', '\r', '\n' });
+                    ls.Add(extracted);
+                } // End if (token.Type == TSqlLexer.LOCAL_ID) 
+
+                lastIndex = token.StopIndex + 1;
+            } // Next token 
+
+            return ls;
+        }
+
+
         static void SplitMultiTableInsertScript()
         {
             string fileName = @"D:\SQL\TESS\Anlage_Refdaten.txt";
@@ -88,7 +135,7 @@ namespace SqlParser
             fileName = @"D:\SQL\TESS\Navigation.txt";
             fileName = @"D:\username\Desktop\Raumdaten\Raumdaten.sql";
             fileName = @"D:\username\Desktop\Raumdaten\Vertragsdaten.sql";
-            
+
 
 
 
@@ -99,7 +146,7 @@ namespace SqlParser
 
 
             System.Text.Encoding enc = GetSystemEncoding();
-            
+
 
             string text = System.IO.File.ReadAllText(fileName, enc);
             System.IO.StringReader reader = new System.IO.StringReader(text);
@@ -116,11 +163,11 @@ namespace SqlParser
 
             tokenStream.Fill();
 
-            
+
             int lastIndex = 0;
 
 
-            System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<string>> dict = 
+            System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<string>> dict =
                 new System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<string>>(System.StringComparer.InvariantCultureIgnoreCase);
 
 
@@ -146,7 +193,7 @@ namespace SqlParser
                 {
                     if (sb.Length > 0)
                     {
-                        string tn = string.Join(".", lsTableName.ToArray()).Replace("[","").Replace("]","").Trim();
+                        string tn = string.Join(".", lsTableName.ToArray()).Replace("[", "").Replace("]", "").Trim();
                         lsTableName.Clear();
                         System.Console.WriteLine(tn);
 
@@ -157,7 +204,7 @@ namespace SqlParser
                         sb.Append(";");
                         dict[tn].Add(sb.ToString());
                     }
-                        
+
 
                     sb.Clear();
                     ignoreThis = false;
@@ -191,12 +238,12 @@ namespace SqlParser
                 else if (token.Type == TSqlLexer.INTO)
                 { }
                 else if (token.Type == TSqlLexer.VALUES || token.Type == TSqlLexer.SELECT)
-                { 
-                
+                {
+
                 }
                 else if (token.Type == TSqlLexer.ID || token.Type == TSqlLexer.SQUARE_BRACKET_ID)
                 {
-                    if(partOfTableName)
+                    if (partOfTableName)
                         lsTableName.Add(extracted);
                 }
                 else if (token.Type == TSqlLexer.DOT)
@@ -212,7 +259,7 @@ namespace SqlParser
                 else if (token.Type == TSqlLexer.CAST)
                 { }
                 else if (token.Type == TSqlLexer.AS)
-                { 
+                {
                     // CAST(xxx AS datetime) 
                 }
                 else if (token.Type == TSqlLexer.MINUS)
@@ -232,8 +279,8 @@ namespace SqlParser
                 {
                     sb.Append(extracted);
                 }
-                    
-                
+
+
 
 
 
@@ -384,7 +431,7 @@ AND
                 // Local variables: LOCAL_ID
                 if (token.Type == TSqlLexer.LOCAL_ID)
                 {
-                    extracted = extracted.Trim(new char[] {' ', '\t', '\v', '\r', '\n' });
+                    extracted = extracted.Trim(new char[] { ' ', '\t', '\v', '\r', '\n' });
 
                     System.Console.WriteLine(extracted);
                 } // End if (token.Type == TSqlLexer.LOCAL_ID) 
@@ -456,23 +503,23 @@ SELECT 123 AS /*some crap*/aaa, 'test' as test
                 TSqlLexer lexer = new TSqlLexer(input);
 
                 Antlr4.Runtime.CommonTokenStream tokenStream = new Antlr4.Runtime.CommonTokenStream(lexer);
-                
+
                 tokenStream.Fill();
-                
+
                 System.Text.StringBuilder sb = new System.Text.StringBuilder();
                 int lastIndex = 0;
-                
+
                 foreach (Antlr4.Runtime.IToken token in tokenStream.GetTokens())
                 {
                     // System.Console.WriteLine(token.Text);
                     string tokenTypeName = lexer.Vocabulary.GetSymbolicName(token.Type);
-                    
+
                     if (token.Type == TSqlLexer.LINE_COMMENT || token.Type == TSqlLexer.COMMENT ||
                         token.Type == TSqlLexer.Eof)
                     {
                         Antlr4.Runtime.Misc.Interval blankInterval = new Antlr4.Runtime.Misc.Interval(lastIndex, token.StartIndex - 1);
                         string extractedBlank = token.InputStream.GetText(blankInterval);
-                        if(string.IsNullOrEmpty(extractedBlank))
+                        if (string.IsNullOrEmpty(extractedBlank))
                             sb.Append(" ");
                         else
                             sb.Append(extractedBlank);
@@ -480,21 +527,21 @@ SELECT 123 AS /*some crap*/aaa, 'test' as test
                         lastIndex = token.StopIndex + 1;
                         continue;
                     } // End if comment 
-                    
+
                     // sql += token.Text + " ";
                     Antlr4.Runtime.Misc.Interval ival = new Antlr4.Runtime.Misc.Interval(lastIndex, token.StopIndex);
                     string extracted = token.InputStream.GetText(ival);
                     // System.Console.WriteLine((extracted));
                     sb.Append(extracted);
-                    
-                    
+
+
                     // System.Console.WriteLine(token.Text);
                     // System.Console.WriteLine(token.Type);
                     // System.Console.WriteLine(tokenTypeName);
 
                     lastIndex = token.StopIndex + 1;
                 } // Next token 
-                
+
                 string sql = sb.ToString();
                 sb.Clear();
                 sb = null;
@@ -521,8 +568,8 @@ SELECT 123 AS /*some crap*/aaa, 'test' as test
                 // TSqlParser.Query_specificationContext 
                 TSqlParser.Tsql_fileContext fileContext = parser.tsql_file();
                 // Antlr4.Runtime.Tree.IParseTree root = (Antlr4.Runtime.Tree.IParseTree)fileContext;
-                
-                
+
+
                 // TSqlParser.Query_specificationContext tsqlParser.Tsql_fileContext fileContext = parser.tsql_file();
                 System.Console.WriteLine("fileContext.ChildCount = " + fileContext.ChildCount.ToString());
                 // Walk it and attach our listener 
@@ -537,8 +584,8 @@ SELECT 123 AS /*some crap*/aaa, 'test' as test
                 System.Console.WriteLine(e.Message);
             }
         } // End Sub WalkerTest 
-        
-        
+
+
         static void VisitorTest(string text)
         {
             try
@@ -549,12 +596,12 @@ SELECT 123 AS /*some crap*/aaa, 'test' as test
                 Antlr4.Runtime.CommonTokenStream tokens = new Antlr4.Runtime.CommonTokenStream(lexer);
                 TSqlParser parser = new TSqlParser(tokens);
                 //Specify our entry point
-                
+
                 // TSqlParser.Query_specificationContext 
                 TSqlParser.Tsql_fileContext fileContext = parser.tsql_file();
-                
+
                 System.Console.WriteLine("fileContext.ChildCount = " + fileContext.ChildCount.ToString());
-                
+
                 SqlVisitor vis = new SqlVisitor();
                 string s = vis.Visit(fileContext);
                 System.Console.WriteLine(s);
@@ -563,11 +610,11 @@ SELECT 123 AS /*some crap*/aaa, 'test' as test
             {
                 System.Console.WriteLine(e.Message);
             }
-            
+
         } // End Sub VisitorTest
-        
-        
+
+
     } // End Class Program 
-    
-    
+
+
 } // End Namespace SqlParser 
